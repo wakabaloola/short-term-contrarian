@@ -1,0 +1,14 @@
+# Operating System
+.DS_Store
+
+# Temporary files
+*.tmp
+*.swp
+*.swo
+
+# Data files
+data/
+*.csv
+
+# Python
+__pycache__/
