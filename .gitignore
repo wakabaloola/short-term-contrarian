@@ -5,6 +5,7 @@
 *.tmp
 *.swp
 *.swo
+*.swn
 
 # Data files
 data/
