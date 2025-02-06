@@ -5,7 +5,8 @@
 To get started, one might like to collect the indices (or tickers, symbols) of interest, the indices that will be the basis of the analysis.
 - Navigate to `.config/exchanges.py` and decide what exchanges or indices to focus on (also, see Note below)
 - Run the script `.src/data_acquisition/get_symbols.py` with the desired option included (which can be checked by running with the --help argument)
-
+- The csv files with the relevant ticker symbols should now be found in the `.data/raw` directory.
+- To extract a list of yf-compatible tickers (str), run `.src/data_acquisition/get_symbols.py -e `
 
 Note:
     If the index of interest is not present, create a new Exchange instance and 
