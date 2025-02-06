@@ -1,9 +1,10 @@
 # src/data_acquisition/exchange.py
 from dataclasses import dataclass
-from typing import List
+from typing import List, Tuple
 import pandas as pd
 import re
 import yfinance as yf
+import time
 from src.utils.logger import get_logger
 from src.utils.paths import RAW_DATA_DIR
 
@@ -16,7 +17,7 @@ class Exchange:
     name: str
     url: str
     table_number: int
-    yf_ticker_extension: str
+    pattern_and_replacement: Tuple[str]
     column_key: str
     filename: str
 
@@ -37,7 +38,9 @@ class Exchange:
         
         # Check if the file already exists to avoid redundant downloads
         if filepath.exists():
+            logger.debug(f"Filepath {filepath} exists")
             logger.info(f"Loading symbols from cached file: {filepath}")
+            logger.debug('Attempting to pd.read_csv(filepath)')
             df = pd.read_csv(filepath)
             stock_tickers = df[self.column_key].tolist()
             return stock_tickers
@@ -61,13 +64,14 @@ class Exchange:
 
         # Process symbols
         logger.debug("Converting tickers' formats into the yf style")
-        table[self.column_key] = table[self.column_key] + self.yf_ticker_extension
-        table[self.column_key] = [x.replace('Athex:\xa0', '') for x in table[self.column_key].values]
+        logger.debug(f"Available table keys = {table.keys}")
+        pattern, repl = self.pattern_and_replacement
+        table[self.column_key] = [re.sub(pattern, repl, x) for x in table[self.column_key].values]
         table[self.column_key] = [re.sub(r'(%5B\d+%5D|\[\d+\])', '', x) for x in table[self.column_key].values]
         self.table = table
 
         # Save raw table to CSV
-        logger.info(f'Saving table to csv: {filepath}')
+        logger.info(f'Saving table to_csv({filepath}, index=False)')
         self.table.to_csv(filepath, index=False)
 
         # Validate tickers with yf
@@ -75,6 +79,7 @@ class Exchange:
         stock_tickers = table[self.column_key].values
         stock_tickers = [ticker if self.ticker_exists(ticker) else 'invalid_ticker' for ticker in stock_tickers]
         return stock_tickers
+
 
     def ticker_exists(self, ticker_symbol: str) -> bool:
         """Check if a ticker symbol is recognized by yfinance.
@@ -88,6 +93,8 @@ class Exchange:
         try:
             logger.debug('Checking if ticker symbol is recognised by yf')
             ticker = yf.Ticker(ticker_symbol)
+            logger.debug(f'ticker.info = {ticker.info}')
+            time.sleep(0.1)
             return bool(ticker.info)
         except Exception as e:
             logger.error(f'yf ticker check resulted in an exception: {e}')
